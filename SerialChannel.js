@@ -33,7 +33,7 @@ module.exports = class SerialChannel {
 
     // Only packets starting with `:` are responses
     if (!data.startsWith(':')) {
-      console.log('>', data)
+      // console.log('>', data)
       return
     }
     

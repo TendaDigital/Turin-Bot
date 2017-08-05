@@ -4,7 +4,7 @@ const Lexer = require('./Lexer')
 require('draftlog').into(console)
 
 module.exports = class VM {
-  constructor(cursorDelegate, robotDelegate = null) {
+  constructor(cursorDelegate, robotDelegate) {
     this.cursor = cursorDelegate
     this.robot = robotDelegate
     // last command
@@ -87,9 +87,7 @@ module.exports = class VM {
   }
 
   async readFromSensor() {
-    // put sensor value in table registers in key currentRegister
-    // this.robot.readSensor()
-    this.registers[this.currentRegister] = parseInt(Math.random() * 2) % 2
+    this.registers[this.currentRegister] = this.robot.read()
   }
 
   incrementRegister() {
@@ -119,20 +117,20 @@ module.exports = class VM {
     }
   }
 
-  front() {
-
+  async front() {
+    await this.robot.front()
   }
 
-  right() {
-
+  async right() {
+    await this.robot.right()
   }
 
-  left() {
-
+  async left() {
+    await this.robot.left()
   }
 
-  beep() {
-
+  async beep() {
+    await this.robot.beep()
   }
 
   begin () {

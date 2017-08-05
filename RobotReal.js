@@ -43,7 +43,7 @@ module.exports = class RobotReal {
   async read(){
     let response = await this.channel.execute('u')
     let distance = parseInt(response.split(':')[2]) || 100
-    return distance
+    return distance < 15 ? 1 : 0
   }
 
 }

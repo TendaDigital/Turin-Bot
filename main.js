@@ -1,5 +1,5 @@
 const VM = require('./VM');
-const Robot = require('./Robot');
+const RobotReal = require('./RobotReal');
 // const CursorReal = require('./CursorReal')
 
 const CursorFile = require('./CursorFile');
@@ -7,12 +7,13 @@ const CursorFile = require('./CursorFile');
 (async () => {
 
   try {
-    //let robot = new Robot(serial...)
-    //let cursor = new CursorReal(serial...)
     let cursor = new CursorFile('examples/collision.turin')
+    let robot = new RobotReal('/dev/tty.JOAO_S2_IVAN-DevB')
+
+    await robot.ready()
     
     //let vm = new VM(cursor, robot)
-    let vm = new VM(cursor)
+    let vm = new VM(cursor, robot)
     await vm.run()
   } catch (e) {
     // some error occured, check the logs
