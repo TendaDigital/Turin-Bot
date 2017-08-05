@@ -1,25 +1,46 @@
-const SerialPort = require('./ReconnectableSerialPort')
+const chalk = require('chalk')
+const SerialPort = require('serialport')
 const SerialCommandProtocol = require('./SerialCommandProtocol')
+const ReconnectableSerialPort = require('./ReconnectableSerialPort')
 const sleep = ms => new Promise((res, rej) => setTimeout(res, ms))
 
-let pattern = { serialNumber: 'AH03B7U8' }
+SerialPort.list(console.log)
 
-let arduino = new SerialPort(pattern)
-let protocol = new SerialCommandProtocol(arduino)
+let arduinoPort = new ReconnectableSerialPort({ serialNumber: 'AH03B7U8' })
+let arduino = new SerialCommandProtocol(arduinoPort)
 
-async function setup() {
-  console.log('setup')
+let robotPort = new ReconnectableSerialPort({ comName: '/dev/tty.HC-05-DevB' })
+let robot = new SerialCommandProtocol(robotPort)
+
+async function runArduino() {
+  console.log('arduino connection')
   while(1) {
-    await protocol.execute('l')
-    await sleep(100)
-    await protocol.execute('h')
-    await sleep(100)
+    let now = Date.now()
+    let exp = now % 10
+    let raw = await arduino.execute(''+exp)
+    let res = raw.split(':')[1]
+
+    let out = `res: ${res} | ${Date.now() - now}ms`
+    console.log(exp == res ? chalk.green(out) : chalk.red(out))
+    // await arduino.execute('l')
+    // await sleep(100)
+    // await arduino.execute('h')
+    // await sleep(100)
+  }
+}
+
+async function runRobot() {
+  console.log('robot connection')
+  while(1) {
+    await robot.execute('f')
   }
 }
 
 
 console.log('init')
-arduino.on('ready', () => setup())
+robotPort.on('ready', () => runRobot())
+arduinoPort.on('ready', () => runArduino())
+
 
 
 // arduino.on('data', (data) => {

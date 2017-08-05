@@ -6,14 +6,17 @@ module.exports = class SerialCommandProtocol {
     this.serialPort = serialPort
     serialPort.on('data', (data) => this.dataReceived(data))
     serialPort.on('open', () => this.resetQueue())
+    serialPort.on('close', () => this.resetQueue())
   }
 
   resetQueue() {
-    this.promiseQueue = []
+    let promise
+    while(promise = this.promiseQueue.shift())
+      promise.reject('Connection opening')
+    // this.promiseQueue = []
   }
 
   dataReceived(data) {
-    console.log('data:', data)
     let promise = this.promiseQueue.shift()
   
     if (!promise)

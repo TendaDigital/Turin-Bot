@@ -16,7 +16,9 @@ module.exports = class ReconnectableSerialPort extends EventEmitter{
     // Configure readline parser
     // this.ready = new Ready({data: 'init'})
     
-    this.readLine = new Readline()
+    this.readLine = new Readline({
+      delimiter: '\r\n',
+    })
     this.ready = new Ready({
       delimiter: 'init',
     })
