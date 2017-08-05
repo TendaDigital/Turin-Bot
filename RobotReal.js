@@ -25,11 +25,11 @@ module.exports = class RobotReal {
   }
 
   async left(){
-    await this.channel.execute('l')
+    await this.channel.execute('r')
   }
 
   async right(){
-    await this.channel.execute('r')
+    await this.channel.execute('l')
   }
 
   async beep(){

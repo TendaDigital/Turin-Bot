@@ -33,7 +33,7 @@ module.exports = class SerialChannel {
 
     // Only packets starting with `:` are responses
     if (!data.startsWith(':')) {
-      console.log('>', data)
+      // console.log('>', data)
       return
     }
     
@@ -60,7 +60,7 @@ module.exports = class SerialChannel {
 
         // Reject
         reject('Timeout action')
-      }, 5000)
+      }, 10000)
     })
 
     return promise
