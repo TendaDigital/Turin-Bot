@@ -12,7 +12,6 @@ const CursorFile = require('./CursorFile');
 
     await robot.ready()
     
-    //let vm = new VM(cursor, robot)
     let vm = new VM(cursor, robot)
     await vm.run()
   } catch (e) {

@@ -87,7 +87,7 @@ module.exports = class VM {
   }
 
   async readFromSensor() {
-    this.registers[this.currentRegister] = this.robot.read()
+    this.registers[this.currentRegister] = await this.robot.read()
   }
 
   incrementRegister() {
@@ -159,14 +159,19 @@ module.exports = class VM {
 
     // check if commands was already used
     if(this.commands[this.lastCommand] == null) {
-      let first = chalk.bgRgb(...color2RGB(command[0]))('  ')
-      // check if begin of code
-      let second
-      if(command[1]) second = chalk.bgRgb(...color2RGB(command[1]))('  ')
-      else second = first
-      this.commands[this.lastCommand] = console.draft('➜ ' + first + second)
-      this.commands[this.lastCommand].original = first + second
-      return
+      try{
+        let first = chalk.bgRgb(...color2RGB(command[0]))('  ')
+        // check if begin of code
+        let second
+        if(command[1]) second = chalk.bgRgb(...color2RGB(command[1]))('  ')
+        else second = first
+        this.commands[this.lastCommand] = console.draft('➜ ' + first + second)
+        this.commands[this.lastCommand].original = first + second
+        return
+      } catch (e) {
+        return
+      }
+
     }
 
     let original = this.commands[this.lastCommand].original
