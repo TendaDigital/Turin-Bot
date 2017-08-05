@@ -7,11 +7,12 @@ const Readline = SerialPort.parsers.Readline
 
 module.exports = class ReconnectableSerialPort extends EventEmitter{
 
-  constructor(pattern) {
+  constructor(pattern, options) {
     super()
 
     this.port = null
     this.pattern = pattern
+    this.options = options
 
     // Configure readline parser
     // this.ready = new Ready({data: 'init'})
@@ -53,7 +54,7 @@ module.exports = class ReconnectableSerialPort extends EventEmitter{
       return false
 
     // Save connection
-    this.port = await new SerialPort(board.comName, {baudRate: 115200});
+    this.port = await new SerialPort(board.comName, this.options);
 
     // Listen to close event
     this.port.on('close', () => { this.keepTrying() })

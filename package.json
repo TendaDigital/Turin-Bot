@@ -5,6 +5,7 @@
   "main": "main.js",
   "dependencies": {
     "chalk": "^2.0.1",
+    "draftlog": "^1.0.12",
     "lodash": "^4.17.4",
     "serialport": "^5.0.0"
   },
