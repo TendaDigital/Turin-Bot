@@ -1,10 +1,18 @@
 const _ = require('lodash')
+const Readline = require('serialport').parsers.Readline
 
-module.exports = class SerialCommandProtocol {
+module.exports = class SerialChannel {
   constructor(serialPort) {
     this.promiseQueue = []
     this.serialPort = serialPort
-    serialPort.on('data', (data) => this.dataReceived(data))
+
+    // Bufferize Line and use as dataReceived
+    let lineBuffer = new Readline({
+      delimiter: '\r\n',
+    })
+    serialPort.pipe(lineBuffer)
+    lineBuffer.on('data', (data) => this.dataReceived(data))
+
     serialPort.on('open', () => this.resetQueue())
     serialPort.on('close', () => this.resetQueue())
   }
@@ -17,6 +25,20 @@ module.exports = class SerialCommandProtocol {
   }
 
   dataReceived(data) {
+    if (!data)
+      return
+
+    // Make sure it's a string
+    data = data.toString()
+
+    // Only packets starting with `:` are responses
+    if (!data.startsWith(':')) {
+      console.log('>', data)
+      return
+    }
+    
+    // console.log('end: ', data)
+
     let promise = this.promiseQueue.shift()
   
     if (!promise)
