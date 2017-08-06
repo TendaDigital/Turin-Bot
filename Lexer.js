@@ -35,6 +35,7 @@ module.exports = class Lexer {
         'LGREEN:PURPLE' : {fn: 'goToBookmark', args: 'PURPLE'},
         'LGREEN:BEIGE'  : {fn: 'goToBookmark', args: 'BEIGE'},
         'LGREEN:DGREEN' : {fn: 'goToBookmark', args: 'DGREEN'},
+        'LGREEN:LGREEN' : {fn: 'goToBookmark', args: 'LGREEN'},
         'LGREEN:BROWN'  : {fn: 'goToBookmark', args: 'BROWN'},
         'LGREEN:BLUE'   : {fn: 'goToBookmark', args: 'BLUE'},
         'LGREEN:RED'    : {fn: 'goToBookmark', args: 'RED'},

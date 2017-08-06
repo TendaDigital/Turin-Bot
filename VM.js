@@ -78,6 +78,7 @@ module.exports = class VM {
     // console.log('Going to bookmark: ' + bookmark)
     while(this.lastCommand > this.bookmarks[bookmark]) {
       await this.previous()
+      await this.read()
     }
   } 
 
@@ -100,12 +101,14 @@ module.exports = class VM {
   async jumpFalse() {
     if(this.registers[this.currentRegister] == 0) {
       await this.next()
+      await this.read()
     }
   }
 
   async jumpTrue() {
     if(this.registers[this.currentRegister] != 0) {
       await this.next()
+      await this.read()
     }
   }
 
@@ -127,13 +130,7 @@ module.exports = class VM {
   async read() {
     let command = await this.cursor.read()
 
-    // Create draft for this line if doesn't exists
-    if (!(this.lastCommand in this.commands)) {
-      let draft = console.draft('...')
-      // Save original command inside draft
-      draft.command = command
-      this.commands[this.lastCommand] = draft
-    }
+    this.commands[this.lastCommand] = command
 
     return command
   }
@@ -163,11 +160,17 @@ module.exports = class VM {
 
   // draw current execution in the terminal
   draw(executing) {
+    // Fill up lines
+    while (this.lines.length < this.commands.length) {
+      this.lines.push(console.draft('...'))
+    }
+
     // Render Register bar
     this.renderRegisterBar()
-    
+
     // Render commands
-    for (let index in this.commands) {
+    for (let index in this.lines) {
+      let draft = this.lines[index]
       let command = this.commands[index]
       let arrow = '  '
 
@@ -175,9 +178,9 @@ module.exports = class VM {
         arrow = this.renderArrowState(executing)
       }
 
-      let block = this.renderBlockCommand(command.command)
+      let block = this.renderBlockCommand(command)
 
-      command(arrow + block)
+      draft(arrow + block)
     }
   }
 
@@ -185,11 +188,12 @@ module.exports = class VM {
     if (!this.loadedRegisterBar) {
       this.loadedRegisterBar = true
       this.barRegs = console.draft('...')
+      this.barBooks = console.draft('...')
       this.barStatus = console.draft('...')
       this.barCmd = console.draft('...')
     }
-    let updateRegisters = this.barRegs
 
+    // Register bar
     let bar = chalk.bgBlack.white(' REGISTERS ')
 
     for (let color in this.registers) {
@@ -202,7 +206,18 @@ module.exports = class VM {
       bar += reg
     }
 
-    let updateStatus = this.barStatus
+    // Bookmarks bar
+    let bookm = chalk.bgBlack.white(' BOOKMARKS ')
+    let books = ['PURPLE','BEIGE','DGREEN','LGREEN','BROWN','BLUE','RED']
+
+    for (let color of books) {
+      let value = this.bookmarks[color] ? '✔' : '✖'
+      let reg = chalk.black.bgRgb(...this.color2RGB(color))(` ${value} `)
+
+      bookm += reg
+    }
+
+    // Status Bar (Line, Current register, ...)
     let status = ''
     status += chalk.bgBlack.white(' LINE ')
 
@@ -212,7 +227,7 @@ module.exports = class VM {
     status += chalk.bgBlack.white(' REG: ')
     status += chalk.bgRgb(...this.color2RGB(this.currentRegister))('   ')
     
-    let updateCmd = this.barCmd
+    // Current Command Bar
     let cmd = ''
     cmd += chalk.bgBlack.white(' COMMAND ')
 
@@ -220,9 +235,10 @@ module.exports = class VM {
     let commandName = command ? Lexer.name(command) : '...'
     cmd += chalk.bgBlackBright.white(` ${commandName}  `)
 
-    updateRegisters(bar)
-    updateStatus(status)
-    updateCmd(cmd)
+    this.barRegs(bar)
+    this.barBooks(bookm)
+    this.barStatus(status)
+    this.barCmd(cmd)
   }
 
   renderBlockCommand(command) {
