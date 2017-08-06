@@ -88,7 +88,7 @@
 float orientation = 0;
 
 #define MIN_PWM_POWER 80
-#define FRONT_POWER   40
+#define FRONT_POWER   70
 #define FRONT_TIME    1400
 
 
@@ -257,7 +257,8 @@ float runDuration = 0;
 
 unsigned long runningSpeedEnd = 0;
 
-PID rotationPID(0.4, 10, 0, 2);
+PID rotationPID(0.8, 10, 0, 2);
+PID frontPID(0.8, 10, 0, 2);
 
 Thread RobotThread(thrControllRobot, 5);
 void thrControllRobot(){
@@ -285,10 +286,10 @@ void thrControllRobot(){
       targetSpeed = FRONT_POWER;
 
     if(runningCmd == CMD_LEFT)
-      deltaDegrees = -95;
+      deltaDegrees = -93;
 
     if(runningCmd == CMD_RIGHT)
-      deltaDegrees =  95;
+      deltaDegrees =  93;
 
     targetSetpoint = orientation + deltaDegrees;
 
@@ -303,6 +304,8 @@ void thrControllRobot(){
     Serial.print(targetSetpoint);
     Serial.println();
 
+    frontPID.setTarget(targetSetpoint);
+    frontPID.reset();
     rotationPID.setTarget(targetSetpoint);
     rotationPID.reset();
   }
@@ -319,7 +322,12 @@ void thrControllRobot(){
   }
 
   // Calculate PID
-  float pid = rotationPID.update(orientation, dt);
+  float pid = 0;
+  if (runningCmd == CMD_FRONT) {
+    pid = frontPID.update(orientation, dt);
+  } else {
+    pid = rotationPID.update(orientation, dt);
+  }
 
   // LEFT/RIGHT can always stop
   if(runningCmd == CMD_RIGHT || runningCmd == CMD_LEFT)

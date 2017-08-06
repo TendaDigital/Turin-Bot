@@ -1,5 +1,5 @@
 const VM = require('./VM');
-const RobotReal = require('./RobotReal');
+const Robot = require('./RobotVirtual');
 // const CursorReal = require('./CursorReal')
 
 const CursorFile = require('./CursorFile');
@@ -8,7 +8,7 @@ const CursorFile = require('./CursorFile');
 
   try {
     let cursor = new CursorFile('examples/collision.turin')
-    let robot = new RobotReal('/dev/tty.JOAO_S2_IVAN-DevB')
+    let robot = new Robot('/dev/tty.JOAO_S2_IVAN-DevB')
 
     await robot.ready()
     

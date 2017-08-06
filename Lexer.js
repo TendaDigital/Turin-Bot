@@ -48,4 +48,9 @@ module.exports = class Lexer {
   static findOperation(command) {
     return Lexer.validCommands()[command.join(":")]
   }
+
+  static name(command) {
+    let op = Lexer.findOperation(command)
+    return op.fn + (op.args ? '→' + op.args : '')
+  }
 }

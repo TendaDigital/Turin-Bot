@@ -26,10 +26,14 @@ module.exports = class VM {
 
     // defined a starting register
     this.currentRegister = 'PURPLE'
+    this.currentCommand = null
 
     // readed lines
     this.commands = []
     this.lines = []
+
+    // Render Register bar
+    this.renderRegisterBar()
   }
 
   async run () {
@@ -40,22 +44,19 @@ module.exports = class VM {
       // while program not finished
       while(!this.cursor.finished()) {
         // read the command
-        let command = await this.cursor.read()
+        let command = this.currentCommand = await this.read()
 
         // check if commands is valid
         if (!Lexer.validate(command)) throw new Error("Invalid command!")
 
         //draw command
-        await this.draw(command)
+        await this.draw(true)
 
         // execute command
         await this.executeCommand(command)
 
-        // increment command number
-        this.lastCommand++
-
-        // go to next command
-        await this.cursor.next();
+        // Next cursor
+        await this.next()
       }
     } catch (e) {
       console.log(e)
@@ -76,9 +77,7 @@ module.exports = class VM {
   async goToBookmark(bookmark) {
     // console.log('Going to bookmark: ' + bookmark)
     while(this.lastCommand > this.bookmarks[bookmark]) {
-      this.draw()
-      await this.cursor.previous();
-      this.lastCommand--;
+      await this.previous()
     }
   } 
 
@@ -100,23 +99,48 @@ module.exports = class VM {
 
   async jumpFalse() {
     if(this.registers[this.currentRegister] == 0) {
-      // increment lastCommand and move cursor
-      this.lastCommand++
-      await this.cursor.next()
-      await this.draw(await this.cursor.read())
-      
+      await this.next()
     }
   }
 
   async jumpTrue() {
     if(this.registers[this.currentRegister] != 0) {
-      // increment lastCommand and move cursor    
-      this.lastCommand++
-      await this.cursor.next()
-      await this.draw(await this.cursor.read())
+      await this.next()
     }
   }
 
+  /*
+   * Cursor
+   */
+  async previous() {
+    await this.cursor.previous()
+    this.lastCommand--;
+    this.draw()
+  }
+
+  async next() {
+    await this.cursor.next()
+    this.lastCommand++;
+    this.draw()
+  }
+
+  async read() {
+    let command = await this.cursor.read()
+
+    // Create draft for this line if doesn't exists
+    if (!(this.lastCommand in this.commands)) {
+      let draft = console.draft('...')
+      // Save original command inside draft
+      draft.command = command
+      this.commands[this.lastCommand] = draft
+    }
+
+    return command
+  }
+
+  /*
+   * Robot
+   */
   async front() {
     await this.robot.front()
   }
@@ -138,43 +162,107 @@ module.exports = class VM {
   }
 
   // draw current execution in the terminal
-  draw(command, text) {
-    function color2RGB(color) {
-      return {
-        'WHITE': [255, 255, 255],
-        'PURPLE': [128, 0 , 128],
-        'LGREEN': [153, 255, 51],
-        'DGREEN': [0, 153, 0],
-        'BROWN': [102, 51, 0],
-        'BEIGE' : [255, 204, 53],
-        'ORANGE': [255, 128, 0],
-        'BLUE': [153, 153, 255]
-      }[color]
-    }
+  draw(executing) {
+    // Render Register bar
+    this.renderRegisterBar()
+    
+    // Render commands
+    for (let index in this.commands) {
+      let command = this.commands[index]
+      let arrow = '  '
 
-    // whipe all commands
-    this.commands.forEach(function (command) {
-      command("  " + command.original)
-    })
-
-    // check if commands was already used
-    if(this.commands[this.lastCommand] == null) {
-      try{
-        let first = chalk.bgRgb(...color2RGB(command[0]))('  ')
-        // check if begin of code
-        let second
-        if(command[1]) second = chalk.bgRgb(...color2RGB(command[1]))('  ')
-        else second = first
-        this.commands[this.lastCommand] = console.draft('➜ ' + first + second)
-        this.commands[this.lastCommand].original = first + second
-        return
-      } catch (e) {
-        return
+      if (index == this.lastCommand) {
+        arrow = this.renderArrowState(executing)
       }
 
+      let block = this.renderBlockCommand(command.command)
+
+      command(arrow + block)
+    }
+  }
+
+  renderRegisterBar() {
+    if (!this.loadedRegisterBar) {
+      this.loadedRegisterBar = true
+      this.barRegs = console.draft('...')
+      this.barStatus = console.draft('...')
+      this.barCmd = console.draft('...')
+    }
+    let updateRegisters = this.barRegs
+
+    let bar = chalk.bgBlack.white(' REGISTERS ')
+
+    for (let color in this.registers) {
+      let value = this.registers[color]
+      let reg = chalk.black.bgRgb(...this.color2RGB(color))(` ${value} `)
+
+      if (this.currentRegister == color)
+        reg = chalk.underline(reg)
+      
+      bar += reg
     }
 
-    let original = this.commands[this.lastCommand].original
-    this.commands[this.lastCommand]('➜ ' + original)
+    let updateStatus = this.barStatus
+    let status = ''
+    status += chalk.bgBlack.white(' LINE ')
+
+    let line = (this.lastCommand < 10 ? ' ' : '') + this.lastCommand
+    status += chalk.bgBlackBright.white(` ${line}  `)
+
+    status += chalk.bgBlack.white(' REG: ')
+    status += chalk.bgRgb(...this.color2RGB(this.currentRegister))('   ')
+    
+    let updateCmd = this.barCmd
+    let cmd = ''
+    cmd += chalk.bgBlack.white(' COMMAND ')
+
+    let command = this.currentCommand
+    let commandName = command ? Lexer.name(command) : '...'
+    cmd += chalk.bgBlackBright.white(` ${commandName}  `)
+
+    updateRegisters(bar)
+    updateStatus(status)
+    updateCmd(cmd)
+  }
+
+  renderBlockCommand(command) {
+    if (command.rendered)
+      return command.rendered
+
+    let first = chalk.bgRgb(...this.color2RGB(command[0]))('  ')
+    // check if begin of code
+    let second
+    if(command[1])
+      second = chalk.bgRgb(...this.color2RGB(command[1]))('  ')
+    else
+      second = first
+
+    let rendered = first + second
+
+    command.rendered = rendered
+    return rendered
+  }
+
+  renderArrowState(active) {
+    let arrow = '➜ '
+    if (active)
+      arrow = chalk.white(arrow)
+    else
+      arrow = chalk.dim(arrow)
+    return arrow
+  }
+
+  color2RGB(color) {
+    return {
+      'RED': [255, 20, 20],
+      'WHITE': [255, 255, 255],
+      'PURPLE': [128, 0 , 128],
+      'LGREEN': [153, 255, 51],
+      'DGREEN': [0, 153, 0],
+      'BROWN': [102, 51, 0],
+      'BEIGE' : [255, 204, 53],
+      'ORANGE': [255, 128, 0],
+      'BLUE': [70, 153, 255]
+    }[color] || [0,0,0]
   }
 }
