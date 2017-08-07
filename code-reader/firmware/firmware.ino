@@ -22,20 +22,31 @@ int ACCEL_DELAY = 500;
 
 /////// Block Index
 int blocks = 0;
-
+int endIndex =0;
+bool endBlock = false;
 
 //////// Accepts Serial Commannds
 void writeOK(char cmd){
   Serial.print(":");
   Serial.write(cmd);
-  Serial.println(":OK");
+  Serial.println(":ok");
 }
 
 //////// ERROR on Serial
 void writeNOK(char cmd){
   Serial.print(":");
   Serial.write(cmd);
-  Serial.println(":ERROR");
+  Serial.println(":error");
+}
+void writeYes(char cmd){
+  Serial.print(":");
+  Serial.write(cmd);
+  Serial.println(":yes");
+}
+void writeNo(char cmd){
+  Serial.print(":");
+  Serial.write(cmd);
+  Serial.println(":no");
 }
 
 //////// Creates Acceleration using delay
@@ -54,8 +65,8 @@ int delayForCompletion(int step, int total){
 }
 
 //////// Move to the next Block
-bool nextBlock(int blocks=1){
-  int toWalk = stepsPerBlock * blocks;
+bool nextBlock(int walks=1){
+  int toWalk = stepsPerBlock * walks;
   int i;
   for(i=0; i < toWalk; i++){
     if(footer){
@@ -74,10 +85,13 @@ bool nextBlock(int blocks=1){
     digitalWrite(enable, LOW);
     for(; i >= 0; i--){
       digitalWrite(stepPin, HIGH);
-      delayMicroseconds(5000);
+      delayMicroseconds(1000);
       digitalWrite(stepPin, LOW);
-      delayMicroseconds(5000);
+      delayMicroseconds(1000);
     }
+    endBlock = true;
+    endIndex = blocks;
+
     interrupts();
     delay(10);
     footer=false;
@@ -88,10 +102,10 @@ bool nextBlock(int blocks=1){
 }
 
 //////// Move to previous Block
-bool lastBlock(int blocks=1){
+bool lastBlock(int walks=1){
   digitalWrite(dir, HIGH);
   digitalWrite(enable, LOW);
-  int toWalk = stepsPerBlock * blocks;
+  int toWalk = stepsPerBlock * walks;
   for(int i=0; i < toWalk; i++){
     if(footer){
       footer=false;
@@ -124,9 +138,10 @@ void setup() {
   
   //Serial
   Serial.begin(115200);
-  Serial.println("|--------- Turin Bot ---------|");
-  Serial.println("|--------  Booted Up  --------|");
+  Serial.println("init");
   #ifdef DEBUG
+    Serial.println("|--------- Turin Bot ---------|");
+    Serial.println("|--------  Booted Up  --------|");
     Serial.print("Steps to mm: ");      
     Serial.println(stepToMm);     
     Serial.print("Desired Lenght: ");      
@@ -156,6 +171,7 @@ void loop() {
   }
   if(cmd ==  'b'){                  //b means previous block
     if(blocks > 0){
+      endBlock = false;
       if(lastBlock()){
         writeOK(cmd);
         blocks--;
@@ -187,11 +203,20 @@ void loop() {
     Serial.println(stepsPerBlock);
     Serial.print("Blocks: ");      
     Serial.println(blocks);
+    Serial.print("End Index: ");      
+    Serial.println(endIndex);
     writeOK(cmd);
   }
   if(cmd ==  'r'){                  //r resets all variables
     blocks=0;
+    endIndex=0;
     footer=false;
     writeOK(cmd);
+  }
+  if(cmd ==  'f'){                  //f shows if it's in the last pice
+    if(endBlock || (endIndex == blocks && (blocks != 0)))
+      writeYes(cmd);
+    else
+      writeNo(cmd);
   }
 } 
