@@ -1,6 +1,7 @@
 #include <EEPROM.h>
 
 //#define DEBUG
+
 //////// PORT DECLARATION
 int dir =5;
 int enable = 8;
@@ -13,12 +14,15 @@ bool footer = false;
 //////// STEPPER VARIABLES
 
 float stepToMm = 0.023;
-
 float desiredLengthMm = EEPROM.read(0)/25.0;
-
 int stepsPerBlock = desiredLengthMm/stepToMm;
+#define SPEED 100
+int ACCEL_STEPS = 40;
+int ACCEL_DELAY = 500;
 
-int blocks = 1;
+/////// Block Index
+int blocks = 0;
+
 
 //////// Accepts Serial Commannds
 void writeOK(char cmd){
@@ -34,16 +38,12 @@ void writeNOK(char cmd){
   Serial.println(":ERROR");
 }
 
-#define SPEED 100
-int ACCEL_STEPS = 40;
-int ACCEL_DELAY = 500;
-
+//////// Creates Acceleration using delay
 int delayForCompletion(int step, int total){
   if (step < ACCEL_STEPS){
     delayMicroseconds(ACCEL_DELAY - step / (float) ACCEL_STEPS * ACCEL_DELAY + SPEED);
     return;
   }
-
   if (step > total - ACCEL_STEPS) {
     step = (ACCEL_STEPS - (total - step));
     delayMicroseconds(ACCEL_DELAY - step / (float) ACCEL_STEPS * ACCEL_DELAY + SPEED);
@@ -51,16 +51,12 @@ int delayForCompletion(int step, int total){
   }
 
   delayMicroseconds(SPEED);
-
-
 }
 
-//////// 
+//////// Move to the next Block
 bool nextBlock(int blocks=1){
-
   int toWalk = stepsPerBlock * blocks;
   int i;
-  
   for(i=0; i < toWalk; i++){
     if(footer){
       break;
@@ -72,14 +68,10 @@ bool nextBlock(int blocks=1){
     digitalWrite(stepPin, LOW);
     delayForCompletion(i, toWalk);
   }
-
-  ////////////
-  if(i < toWalk){
+  if(i < toWalk){                   // Checks to see if there's need to go back to last brick
     noInterrupts();
     digitalWrite(dir, HIGH);
     digitalWrite(enable, LOW);
-    Serial.print("Faltam: ");
-    Serial.println(i);
     for(; i >= 0; i--){
       digitalWrite(stepPin, HIGH);
       delayMicroseconds(5000);
@@ -95,11 +87,10 @@ bool nextBlock(int blocks=1){
   return true;
 }
 
+//////// Move to previous Block
 bool lastBlock(int blocks=1){
-
   digitalWrite(dir, HIGH);
   digitalWrite(enable, LOW);
-
   int toWalk = stepsPerBlock * blocks;
   for(int i=0; i < toWalk; i++){
     if(footer){
@@ -114,7 +105,7 @@ bool lastBlock(int blocks=1){
   return true;
 }
 
-
+//////// Handles Interrupt on EndCourse
 void foundFooter(){
   digitalWrite(enable, HIGH);
   footer=true;
@@ -143,21 +134,18 @@ void setup() {
     Serial.print("Steps per Block: ");      
     Serial.println(stepsPerBlock);
 #endif
-  
-
 }
 
 void loop() {
-  
-  // With Enable LOW the FETs are activate
- digitalWrite(enable, HIGH);
-
+  // With Enable HIGH the motor is disabled
+  digitalWrite(enable, HIGH);
+  //Is there something on Serial?
   if(!Serial.available())
-    return;
-    
-  char cmd = Serial.read();
+    return;   
 
-  if(cmd ==  'n'){
+  char cmd = Serial.read();
+  //Reading Serial Commands
+  if(cmd ==  'n'){                  //n means next block
     if(nextBlock()){
       blocks++;
       writeOK(cmd);
@@ -166,29 +154,31 @@ void loop() {
     else
       writeNOK(cmd);            
   }
-  if(cmd ==  'b'){
-    if(lastBlock()){
-      writeOK(cmd);
-      blocks--;
+  if(cmd ==  'b'){                  //b means previous block
+    if(blocks > 0){
+      if(lastBlock()){
+        writeOK(cmd);
+        blocks--;
+      }
     }
     else
       writeNOK(cmd);
-   }
-  if(cmd ==  'l'){
+  }
+  if(cmd ==  'l'){                  //l means less 0.05mm on desired length
     desiredLengthMm -= 0.05;
     EEPROM.write(0, desiredLengthMm*25.0);
     stepsPerBlock = desiredLengthMm/stepToMm;
     Serial.println(desiredLengthMm);
     writeOK(cmd);
   }
-  if(cmd ==  'm'){
+  if(cmd ==  'm'){                  //m means more 0.05mm on desired length
     desiredLengthMm += 0.05;
     EEPROM.write(0, desiredLengthMm*25.0);
     stepsPerBlock = desiredLengthMm/stepToMm;
     Serial.println(desiredLengthMm);
     writeOK(cmd);
   }
-  if(cmd ==  'i'){
+  if(cmd ==  'i'){                  //i asks for info
     Serial.print("Steps to mm: ");      
     Serial.println(stepToMm);     
     Serial.print("Desired Lenght: ");      
@@ -199,8 +189,8 @@ void loop() {
     Serial.println(blocks);
     writeOK(cmd);
   }
-  if(cmd ==  'r'){
-    blocks=1;
+  if(cmd ==  'r'){                  //r resets all variables
+    blocks=0;
     footer=false;
     writeOK(cmd);
   }
