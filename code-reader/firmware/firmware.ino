@@ -58,18 +58,39 @@ int delayForCompletion(int step, int total){
 //////// 
 bool nextBlock(int blocks=1){
 
-  digitalWrite(dir, LOW);
-  digitalWrite(enable, LOW);
   int toWalk = stepsPerBlock * blocks;
+  int i;
   
-  for(int i=0; i < toWalk; i++){
+  for(i=0; i < toWalk; i++){
     if(footer){
-      return false;
+      break;
     }
+    digitalWrite(dir, LOW);
+    digitalWrite(enable, LOW);
     digitalWrite(stepPin, HIGH);
     delayForCompletion(i, toWalk);
     digitalWrite(stepPin, LOW);
     delayForCompletion(i, toWalk);
+  }
+
+  ////////////
+  if(i < toWalk){
+    noInterrupts();
+    digitalWrite(dir, HIGH);
+    digitalWrite(enable, LOW);
+    Serial.print("Faltam: ");
+    Serial.println(i);
+    for(; i >= 0; i--){
+      digitalWrite(stepPin, HIGH);
+      delayMicroseconds(5000);
+      digitalWrite(stepPin, LOW);
+      delayMicroseconds(5000);
+    }
+    interrupts();
+    delay(10);
+    footer=false;
+    return false;
+
   }
   return true;
 }
@@ -167,7 +188,7 @@ void loop() {
     Serial.println(desiredLengthMm);
     writeOK(cmd);
   }
-  if(cmd ==  's'){
+  if(cmd ==  'i'){
     Serial.print("Steps to mm: ");      
     Serial.println(stepToMm);     
     Serial.print("Desired Lenght: ");      
