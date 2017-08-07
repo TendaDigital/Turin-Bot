@@ -106,15 +106,12 @@ module.exports = class CompilerAssembly {
 
       // Compile command
       this.compileCommand(command)
-      
-      // Next command
-      await cursor.next()
 
       // Execute lifecycle callback
       let actions = [...this.lifecycle_end]
       this.lifecycle_end = []
       actions.forEach(action => action())
-    } while ( !cursor.finished() )
+    } while ( !(await cursor.next()) )
 
     // Append exit codes
     this.append_main([

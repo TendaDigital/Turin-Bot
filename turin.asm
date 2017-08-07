@@ -108,29 +108,6 @@ _start:
 	mov edx,helloLen
 	int 80h
 	; begin main
-;saveBookmark:BEIGE
-BEIGE:
-;saveBookmark:BLUE
-BLUE:
-	;front
-	call robot_front
-	;readFromSensor
-	call read
-	;jumpTrue
-	mov eax, registers
-	add eax, [register]
-	cmp [eax], byte 0
-	jne jumpTrue_15
-	;goToBookmark:BLUE
-	JMP SHORT BLUE
-	;jumpTrue callback
-	jumpTrue_15:
-	;beep
-	call robot_beep
-	;left
-	call robot_left
-	;goToBookmark:BEIGE
-	JMP SHORT BEIGE
 	
 	mov  eax, 1      ;sys exit
 	int 0x80

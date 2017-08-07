@@ -1,3 +1,4 @@
+const _ = require('lodash')
 const chalk = require('chalk')
 const Lexer = require('./Lexer')
 
@@ -49,7 +50,8 @@ module.exports = class VM {
 
     try {
       // while program not finished
-      while(!this.cursor.finished()) {
+      // while( !(await this.cursor.finished()) ) {
+      do {
         // Clear jump being rendered
         this.renderJump()
 
@@ -65,13 +67,26 @@ module.exports = class VM {
         // execute command
         await this.executeCommand(command)
 
-        // Next cursor
-        await this.next()
-      }
+        
+      } while (await this.next())
     } catch (e) {
       console.log(e)
       this.cursor.halt()
     }
+
+    console.log('Reseting head...')
+    await this.resetHead()
+    console.log('Finished Execution.')
+    this.currentCommand = 'finished'
+    this.draw(false)
+  }
+
+  async resetHead(){
+    this.currentCommand = 'resetHead'
+    this.renderJump(this.lastCommand, 0)
+    while(this.lastCommand > 0)
+      await this.previous()
+    this.renderJump()
   }
 
   async executeCommand(command) {
@@ -135,9 +150,12 @@ module.exports = class VM {
   }
 
   async next() {
-    await this.cursor.next()
-    this.lastCommand++;
+    let ret = await this.cursor.next()
+    if (ret) {
+      this.lastCommand++;
+    }
     this.draw()
+    return ret
   }
 
   async read() {
@@ -209,7 +227,7 @@ module.exports = class VM {
   renderBlockJump (index) {
     let {blockFrom, blockTo} = this
 
-    if (!blockFrom || !blockTo) 
+    if (blockFrom == null && blockTo == null) 
       return '   '
 
     if (blockFrom == index) {
@@ -277,7 +295,9 @@ module.exports = class VM {
     cmd += chalk.bgBlack.white(' COMMAND ')
 
     let command = this.currentCommand
-    let commandName = command ? Lexer.name(command) : '...'
+    let commandName = command
+    if (command && !_.isString(command))
+      commandName = Lexer.name(command)
     cmd += chalk.bgBlackBright.white(` ${commandName}  `)
 
     this.barRegs(bar)

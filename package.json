@@ -6,6 +6,7 @@
   "dependencies": {
     "chalk": "^2.0.1",
     "draftlog": "^1.0.12",
+    "inquirer": "^3.2.1",
     "lodash": "^4.17.4",
     "robotjs": "^0.4.7",
     "serialport": "^5.0.0"

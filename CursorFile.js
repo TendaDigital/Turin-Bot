@@ -8,21 +8,23 @@ module.exports = class CursorFile {
     this.delay = delay
   }
 
-  goToStart() {
+  async ready() {
+    return
+  }
+
+  async goToStart() {
     this.currentPosition = 0
   }
 
-  read() {
+  async read() {
     return this.commands[this.currentPosition].split(':')
-  }
-
-  finished () {
-    return this.currentPosition == (this.commands.length - 1)
   }
 
   async next() {
     await sleep(this.delay)
     this.currentPosition++
+
+    return !(this.currentPosition == (this.commands.length - 1))
   }
 
   async previous() {

@@ -2,7 +2,8 @@ const _ = require('lodash')
 const Readline = require('serialport').parsers.Readline
 
 module.exports = class SerialChannel {
-  constructor(serialPort) {
+  constructor(serialPort, options) {
+    this.options = options || {}
     this.promiseQueue = []
     this.serialPort = serialPort
 
@@ -27,6 +28,9 @@ module.exports = class SerialChannel {
   dataReceived(data) {
     if (!data)
       return
+
+    if (this.options.debug)
+      console.log('>', data)
 
     // Make sure it's a string
     data = data.toString()

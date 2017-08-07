@@ -89,7 +89,7 @@ float orientation = 0;
 
 #define MIN_PWM_POWER 80
 #define FRONT_POWER   70
-#define FRONT_TIME    1400
+#define FRONT_TIME    350
 
 
 // 
