@@ -2,6 +2,12 @@ const _ = require('lodash')
 const chalk = require('chalk')
 const Lexer = require('../Lexer')
 
+/*
+  Outputs code to turin.asm
+  Use the output code to run with:
+  https://www.jdoodle.com/compile-assembler-nasm-online
+ */
+
 module.exports = class CompilerAssembly {
   constructor (cursor) {
     this.cursor = cursor
