@@ -7,6 +7,10 @@ module.exports = class VM {
   constructor(cursorDelegate, robotDelegate) {
     this.cursor = cursorDelegate
     this.robot = robotDelegate
+
+    // Debug mode
+    this.debug = true
+
     // last command
     this.lastCommand = 0
 
@@ -32,6 +36,9 @@ module.exports = class VM {
     this.commands = []
     this.lines = []
 
+    // Rendering flags
+    this.blockFrom = null
+    this.blockTo = null
     // Render Register bar
     this.renderRegisterBar()
   }
@@ -43,6 +50,9 @@ module.exports = class VM {
     try {
       // while program not finished
       while(!this.cursor.finished()) {
+        // Clear jump being rendered
+        this.renderJump()
+
         // read the command
         let command = this.currentCommand = await this.read()
 
@@ -76,6 +86,7 @@ module.exports = class VM {
 
   async goToBookmark(bookmark) {
     // console.log('Going to bookmark: ' + bookmark)
+    this.renderJump(this.lastCommand, this.bookmarks[bookmark])
     while(this.lastCommand > this.bookmarks[bookmark]) {
       await this.previous()
       await this.read()
@@ -100,6 +111,7 @@ module.exports = class VM {
 
   async jumpFalse() {
     if(this.registers[this.currentRegister] == 0) {
+      this.renderJump(this.lastCommand, this.lastCommand + 2)
       await this.next()
       await this.read()
     }
@@ -107,6 +119,7 @@ module.exports = class VM {
 
   async jumpTrue() {
     if(this.registers[this.currentRegister] != 0) {
+      this.renderJump(this.lastCommand, this.lastCommand + 2)
       await this.next()
       await this.read()
     }
@@ -172,16 +185,48 @@ module.exports = class VM {
     for (let index in this.lines) {
       let draft = this.lines[index]
       let command = this.commands[index]
+      // Line Number
+      let line = index + ': '
+      line = chalk.dim(' '.repeat(4 - line.length) + line)
+
+      // Arrow
       let arrow = '  '
+      let block = this.renderBlockCommand(command)
+      let jump = this.renderBlockJump(index)
+      let explain = Lexer.name(command)
 
       if (index == this.lastCommand) {
         arrow = this.renderArrowState(executing)
+        explain = chalk.white(explain)
+      } else {
+        explain = chalk.dim(explain)
       }
 
-      let block = this.renderBlockCommand(command)
-
-      draft(arrow + block)
+      draft(line + arrow + block + jump + explain)
     }
+  }
+
+  renderBlockJump (index) {
+    let {blockFrom, blockTo} = this
+
+    if (!blockFrom || !blockTo) 
+      return '   '
+
+    if (blockFrom == index) {
+      return blockFrom < blockTo ? ' ╮ ' : ' ╯ '
+    }
+
+    if (blockTo == index) {
+      return blockFrom < blockTo ? '◂╯ ' : '◂╮ '
+    }
+
+    let min = Math.min(blockFrom, blockTo)
+    let max = Math.max(blockFrom, blockTo)
+    if (min < index && index < max) {
+      return ' │ '
+    }
+
+    return '   '
   }
 
   renderRegisterBar() {
@@ -257,6 +302,12 @@ module.exports = class VM {
 
     command.rendered = rendered
     return rendered
+  }
+
+  renderJump(from, to) {
+    this.blockFrom = from
+    this.blockTo = to
+    this.draw()
   }
 
   renderArrowState(active) {

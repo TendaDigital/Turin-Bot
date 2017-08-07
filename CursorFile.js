@@ -2,9 +2,10 @@ const fs = require('fs');
 const sleep = require('./sleep')
 
 module.exports = class CursorFile {
-  constructor(path) {
+  constructor(path, delay = 300) {
     this.commands = fs.readFileSync(path).toString().split("\n")
     this.currentPosition = 0
+    this.delay = delay
   }
 
   goToStart() {
@@ -20,12 +21,12 @@ module.exports = class CursorFile {
   }
 
   async next() {
-    await sleep(300)
+    await sleep(this.delay)
     this.currentPosition++
   }
 
   async previous() {
-    await sleep(300)
+    await sleep(this.delay)
     this.currentPosition--
   }
 
