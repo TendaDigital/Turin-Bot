@@ -60,7 +60,7 @@ module.exports = class VM {
       }
     } catch (e) {
       console.log(e)
-      this.cursos.halt()
+      this.cursor.halt()
     }
   }
 
