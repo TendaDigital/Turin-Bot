@@ -1,5 +1,8 @@
 #include <EEPROM.h>
-
+#include <Wire.h>
+//#include <SoftwareWire.h>
+#include <Adafruit_TCS34725.h>
+#include <SoftwareWire_TCS34725.h>
 //#define DEBUG
 
 //////// PORT DECLARATION
@@ -25,28 +28,47 @@ int blocks = 0;
 int endIndex =0;
 bool endBlock = false;
 
+//////////  
+Adafruit_TCS34725 tcs1 = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
+uint16_t clear1, red1, green1, blue1;
+
+/////////
+int sda = 6;
+int scl = 7;
+
+SoftwareWire_TCS34725 tcs2 = SoftwareWire_TCS34725(sda, scl, SOFT_TCS34725_INTEGRATIONTIME_50MS, SOFT_TCS34725_GAIN_4X);
+uint16_t clear2, red2, green2, blue2;
+
+
+
 //////// Accepts Serial Commannds
-void writeOK(char cmd){
+void writeOK(char _cmd){
   Serial.print(":");
-  Serial.write(cmd);
+  Serial.write(_cmd);
   Serial.println(":ok");
 }
 
 //////// ERROR on Serial
-void writeNOK(char cmd){
+void writeNOK(char _cmd){
   Serial.print(":");
-  Serial.write(cmd);
+  Serial.write(_cmd);
   Serial.println(":error");
 }
-void writeYes(char cmd){
+void writeYes(char _cmd){
   Serial.print(":");
-  Serial.write(cmd);
+  Serial.write(_cmd);
   Serial.println(":yes");
 }
-void writeNo(char cmd){
+void writeNo(char _cmd){
   Serial.print(":");
-  Serial.write(cmd);
+  Serial.write(_cmd);
   Serial.println(":no");
+}
+
+void writeColor(char _cmd){
+  Serial.print(":");
+  Serial.write(_cmd);
+  readColor();
 }
 
 //////// Creates Acceleration using delay
@@ -136,9 +158,33 @@ void setup() {
   // EndCourse Button Triggers STOP motors
   attachInterrupt(digitalPinToInterrupt(endSwitch),foundFooter, FALLING); 
   
+  //SoftwareWire myWire(sda, scl);
+
   //Serial
   Serial.begin(115200);
-  Serial.println("init");
+  if (tcs1.begin()) {
+    Serial.println("init1");  
+  }
+  else{
+    Serial.print(" color 1 error.");
+    while(1){
+      Serial.print(".");
+      delay(1000);
+    }
+  }
+
+  if (tcs2.begin()) {
+    Serial.println("init2");  
+  }
+  else{
+    Serial.print("color 2 error.");
+    while(1){
+      Serial.print(".");
+      delay(1000);
+    }
+  }
+
+  
   #ifdef DEBUG
     Serial.println("|--------- Turin Bot ---------|");
     Serial.println("|--------  Booted Up  --------|");
@@ -151,7 +197,36 @@ void setup() {
 #endif
 }
 
+void readColor(void){
+  delay(60);
+
+  tcs1.getRawData(&red1, &green1, &blue1, &clear1);
+  tcs2.getRawData(&red2, &green2, &blue2, &clear2);
+
+  uint32_t sum1 = clear1;
+  uint32_t sum2 = clear2;
+  float r1, g1, b1;
+  float r2, g2, b2;
+  r1 = red1; r1 /= sum1;
+  r2 = red2; r2 /= sum2;
+  g1 = green1; g1 /= sum1;
+  g2 = green2; g2 /= sum2;
+  b1 = blue1; b1 /= sum1;
+  b2 = blue2; b2 /= sum2;
+  r1 *= 256; g1 *= 256; b1 *= 256;
+  r2 *= 256; g2 *= 256; b2 *= 256;
+  Serial.print(':');
+  Serial.print((int)r1, HEX); 
+  Serial.print((int)g1, HEX); 
+  Serial.print((int)b1, HEX);
+  Serial.print(':');
+  Serial.print((int)r2, HEX); 
+  Serial.print((int)g2, HEX); 
+  Serial.println((int)b2, HEX);
+}
+
 void loop() {
+
   // With Enable HIGH the motor is disabled
   digitalWrite(enable, HIGH);
   //Is there something on Serial?
@@ -173,8 +248,8 @@ void loop() {
     if(blocks > 0){
       endBlock = false;
       if(lastBlock()){
-        writeOK(cmd);
         blocks--;
+        writeOK(cmd);
       }
     }
     else
@@ -218,5 +293,8 @@ void loop() {
       writeYes(cmd);
     else
       writeNo(cmd);
+  }
+  if(cmd == 'c'){
+      writeColor(cmd);
   }
 } 
