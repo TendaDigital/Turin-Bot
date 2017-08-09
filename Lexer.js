@@ -5,6 +5,7 @@ module.exports = class Lexer {
       return {
         // header
         'WHITE': { fn: 'begin', args: null},
+        'WHITE:WHITE': { fn: 'begin', args: null},
         // robot commands
         'DGREEN:DGREEN' : { fn: 'front', args: null},
         'RED:RED' :       { fn: 'right', args: null},

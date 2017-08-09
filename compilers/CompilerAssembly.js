@@ -11,6 +11,7 @@ const Lexer = require('../Lexer')
 module.exports = class CompilerAssembly {
   constructor (cursor) {
     this.cursor = cursor
+    this.lastCommand = 0
 
     // Array of strings
     this.sections = {}
@@ -98,11 +99,18 @@ module.exports = class CompilerAssembly {
     this.append_main(this.declare_printString('hello'))
 
     do { 
+      this.lastCommand++
       // Read commands
       let line = await cursor.read()
 
+      console.log(chalk.dim('compile: '), chalk.yellow(line[0] + ':' + line[1]))
+
       // Validate command
       let command = Lexer.findOperation(line)
+
+      if (!command){
+        throw new Error('Invalid command: ', command)
+      }
 
       // Compile command
       this.compileCommand(command)
@@ -111,7 +119,7 @@ module.exports = class CompilerAssembly {
       let actions = [...this.lifecycle_end]
       this.lifecycle_end = []
       actions.forEach(action => action())
-    } while ( !(await cursor.next()) )
+    } while ( await cursor.next() )
 
     // Append exit codes
     this.append_main([
@@ -131,6 +139,13 @@ module.exports = class CompilerAssembly {
     }
 
     return code.join('\n')
+  }
+
+  async resetHead(){
+    while(this.lastCommand > 1) {
+      this.lastCommand--
+      await this.cursor.previous()
+    }
   }
 
   compileCommand(command) {

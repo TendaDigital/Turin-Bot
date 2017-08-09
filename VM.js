@@ -59,15 +59,14 @@ module.exports = class VM {
         let command = this.currentCommand = await this.read()
 
         // check if commands is valid
-        if (!Lexer.validate(command)) throw new Error("Invalid command!")
+        if (!Lexer.validate(command))
+          throw new Error('Invalid command: ' + command + this.renderBlockCommand(command))
 
         //draw command
         await this.draw(true)
 
         // execute command
         await this.executeCommand(command)
-
-        
       } while (await this.next())
     } catch (e) {
       console.log(e)

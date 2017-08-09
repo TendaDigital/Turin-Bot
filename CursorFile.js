@@ -24,7 +24,7 @@ module.exports = class CursorFile {
     await sleep(this.delay)
     this.currentPosition++
 
-    return !(this.currentPosition == (this.commands.length - 1))
+    return !(this.currentPosition > this.commands.length - 1)
   }
 
   async previous() {

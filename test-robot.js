@@ -13,11 +13,6 @@ async function main(){
   await robot.ready()
   console.log('Robot OK. Ready!')
 
-  // console.log()
-  // let draft = console.draft('Reading...')
-  // console.log()
-
-  // const rl = readline.createInterface(process.stdin, process.stdout)
   readline.emitKeypressEvents(process.stdin)
   if (process.stdin.isTTY)
     process.stdin.setRawMode(true)
@@ -41,27 +36,6 @@ async function main(){
       process.exit();
     }
   });
-
-  // while(1) {
-
-
-  //   // await robot.front();
-  //   // await robot.right();
-  //   // await robot.left();
-  //   // await robot.beep();
-  //   // let dist = await robot.read();
-  //   // let dist = await robot.read()
-  //   // let line = chalk.yellow('Reading: ')
-  //   // if (dist < 50) {
-  //   //   line += chalk.bgGreen(' ').repeat(dist)
-  //   //   line += chalk.bgGreenBright(' ').repeat(50 - dist)
-  //   // } else {
-  //   //   line += chalk.bgRedBright(' ').repeat(50)
-  //   // }
-
-  //   // line += ' ' + dist + 'cm'
-  //   // draft(line)
-  // }
 }
 
 process.on('unhandledRejection', (e) => {
@@ -79,7 +53,5 @@ process.on('exit', ()=>{
   console.log('Bye! :)')
   console.log()
 })
-
-
 
 main()

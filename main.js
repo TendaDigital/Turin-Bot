@@ -9,12 +9,11 @@ const RobotVirtual = require('./RobotVirtual');
 const CursorFile = require('./CursorFile');
 const CursorReal = require('./CursorReal');
 
-const CURSOR_PORT = '/dev/tty.wchusbserial1450'
-
+let vm
 async function main() {
   try {
     // let cursor = new CursorFile('examples/collision.turin')
-    let cursor = new CursorReal(await CursorReal.getPort(CURSOR_PORT))
+    let cursor = new CursorReal(await CursorReal.getPort('/dev/tty.wchusbserial1410'))
     let robot = new RobotVirtual()
     // let robot = new RobotReal('/dev/tty.JOAO_S2_IVAN-DevB')
 
@@ -24,14 +23,17 @@ async function main() {
     await robot.ready()
     console.log('All ok! Starting VM...')
     
-    let vm = new VM(cursor, robot)
+    vm = new VM(cursor, robot)
     await vm.run()
 
     console.log('Finished VM Execution, exiting')
     process.exit(0)
   } catch (e) {
     // some error occured, check the logs
-    console.log(e)
+    console.log(e.stack)
+
+    // await vm.resetHead()
+
     process.exit(1)
   }
 }
@@ -50,6 +52,11 @@ process.on('exit', ()=>{
   console.log()
   console.log('Thank you, bye! :)')
   console.log()
+})
+
+process.on('SIGINT', async () => {
+  await vm.resetHead()
+  process.exit(0)
 })
 
 main()
