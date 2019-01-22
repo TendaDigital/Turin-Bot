@@ -85,7 +85,7 @@ module.exports = class CursorReal{
   }
 
   halt() {
-    throw new Error("Something bad happened!")
+    // throw new Error("Something bad happened!")
   }
 }
 

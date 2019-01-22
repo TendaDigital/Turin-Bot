@@ -59,8 +59,10 @@ module.exports = class VM {
         let command = this.currentCommand = await this.read()
 
         // check if commands is valid
-        if (!Lexer.validate(command))
-          throw new Error('Invalid command: ' + command + this.renderBlockCommand(command))
+        if (!Lexer.validate(command)) {
+          throw new Error('Invalid command: \n' 
+            + command + ' ' +  this.renderBlockCommand(command))
+        }
 
         //draw command
         await this.draw(true)
@@ -69,6 +71,9 @@ module.exports = class VM {
         await this.executeCommand(command)
       } while (await this.next())
     } catch (e) {
+      console.log()
+      console.log()
+      console.log()
       console.log(e)
       this.cursor.halt()
     }
@@ -100,9 +105,28 @@ module.exports = class VM {
 
   async goToBookmark(bookmark) {
     // console.log('Going to bookmark: ' + bookmark)
+    // If bookmark is already saved, go to it, else, go next
+    let bookmarkPosition = this.bookmarks[bookmark]
+    
+    if (bookmarkPosition == null) {
+      this.renderJump(this.lastCommand, 100000)
+      while (this.bookmarks[bookmark] == null) {
+        if (!await this.next())
+          throw new Error('Could not find bookmark: ' + bookmark)
+        let command = await this.read()
+        if (Lexer.findOperation(command).fn == 'saveBookmark'){
+          this.executeCommand(command)
+        }
+      }
+    }
+
+    let action = 'previous'
+    if (bookmarkPosition > this.lastCommand)
+      action = 'next'
+
     this.renderJump(this.lastCommand, this.bookmarks[bookmark])
     while(this.lastCommand > this.bookmarks[bookmark]) {
-      await this.previous()
+      await this[action]()
       await this.read()
     }
   } 
@@ -158,6 +182,10 @@ module.exports = class VM {
   }
 
   async read() {
+    // Cache
+    if (this.commands[this.lastCommand])
+      return this.commands[this.lastCommand]
+
     let command = await this.cursor.read()
 
     this.commands[this.lastCommand] = command

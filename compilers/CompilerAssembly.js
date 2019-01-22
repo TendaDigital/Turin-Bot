@@ -151,7 +151,7 @@ module.exports = class CompilerAssembly {
   compileCommand(command) {
     if (command.fn == 'begin') {
       return this.append_main([
-        '\t; begin main'
+        '\t; nop'
       ])
     } 
 
@@ -239,6 +239,28 @@ module.exports = class CompilerAssembly {
       this.append_section_later(target)
       return
     }
+
+    if (command.fn == 'incrementRegister') {
+      // Robot Action: Increment selected Register
+      return this.append_main([
+        '\t;incrementRegister',
+        '\tmov eax, registers',
+        '\tadd eax, [register]',
+        '\tinc [eax]',
+      ])
+      return
+    } 
+
+    if (command.fn == 'decrementRegister') {
+      // Robot Action: Decrement selected Register
+      return this.append_main([
+        '\t;decrementRegister',
+        '\tmov eax, registers',
+        '\tadd eax, [register]',
+        '\tdec [eax]',
+      ])
+      return
+    } 
 
     console.log(command.fn)
     this.append_main([

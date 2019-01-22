@@ -14,8 +14,8 @@ async function main() {
   try {
     // let cursor = new CursorFile('examples/collision.turin')
     let cursor = new CursorReal(await CursorReal.getPort('/dev/tty.wchusbserial1410'))
-    let robot = new RobotVirtual()
-    // let robot = new RobotReal('/dev/tty.JOAO_S2_IVAN-DevB')
+    // let robot = new RobotVirtual()
+    let robot = new RobotReal('/dev/tty.JOAO_S2_IVAN-DevB')
 
     console.log('Waiting for Cursor...')
     await cursor.ready()
@@ -55,7 +55,7 @@ process.on('exit', ()=>{
 })
 
 process.on('SIGINT', async () => {
-  await vm.resetHead()
+  // await vm.resetHead()
   process.exit(0)
 })
 

@@ -11,6 +11,11 @@ module.exports = class Lexer {
         'RED:RED' :       { fn: 'right', args: null},
         'ORANGE:ORANGE' : { fn: 'left', args: null},
         'BLUE:BLUE' :     { fn: 'beep', args: null},
+
+        // Hack
+        'RED:ORANGE' :    { fn: 'right', args: null},
+        'ORANGE:ORANGE' : { fn: 'right', args: null},
+
         // operate with last mentioned register
         'PURPLE:PURPLE' : { fn: 'readFromSensor', args: null},
         'PURPLE:BEIGE'  : { fn: 'incrementRegister', args: null},
@@ -53,6 +58,9 @@ module.exports = class Lexer {
 
   static name(command) {
     let op = Lexer.findOperation(command)
+    if (!op) {
+        throw new Error(`Command not found: ${command[0]}:${command[1]}`)
+    }
     return op.fn + (op.args ? '→' + op.args : '')
   }
 }
